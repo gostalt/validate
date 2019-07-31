@@ -10,6 +10,20 @@ A validator for `http.Request`.
 has a parameter and a callback that determines if a Rule passes
 or not.
 
+There are a number of built-in checks that you can use, rather than
+reinventing the wheel:
+
+```go
+nameIsAlpha := validate.Rule{
+  Param: "name",
+  Check: validate.Alpha,
+}
+```
+
+However, you are free to create your own rules by passing a function
+to the Check field. This function must take an http.Request and a string
+and return an error:
+
 ```go
 nameRequired := validate.Rule{
     Param: "name",
