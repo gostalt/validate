@@ -12,29 +12,46 @@ func TestRules(t *testing.T) {
 	r.ParseForm()
 
 	rules := []struct {
-		Check  CheckFunc
-		Passes []string
-		Fails  []string
+		Check   CheckFunc
+		Passes  []string
+		Fails   []string
+		Options Options
 	}{
 		{
 			Alpha,
 			[]string{"Alphabet", "lowercase", "UPPERCASE"},
 			[]string{"Alphab3tic4l", "13567", "letters-and-dashes"},
+			nil,
 		},
 		{
 			Alphanumeric,
 			[]string{"Alphanumeric123", "123alpha", "123", "abc"},
 			[]string{"number-letter-dash", "__", "--"},
+			nil,
 		},
 		{
 			Boolean,
 			[]string{"true", "false", "1", "0"},
 			[]string{"2", "truthy", "falsy"},
+			nil,
 		},
 		{
 			Integer,
 			[]string{"123", "1", "0", "99"},
 			[]string{"abc", "1.5"},
+			nil,
+		},
+		{
+			MaxLength,
+			[]string{"aaaa", "1111", "true", "----"},
+			[]string{"too long by half", "TWO WEEEEEKS", "1111111"},
+			Options{"length": 5},
+		},
+		{
+			MinLength,
+			[]string{"ok", "ye", "zz"},
+			[]string{"a", "1", "_", "-"},
+			Options{"length": 2},
 		},
 	}
 
@@ -42,7 +59,7 @@ func TestRules(t *testing.T) {
 		// First, ensure the check passes
 		for _, value := range rule.Passes {
 			r.Form.Set("parameter", value)
-			msgs, _ := Check(r, Rule{"parameter", rule.Check})
+			msgs, _ := Check(r, Rule{"parameter", rule.Check, rule.Options})
 			if len(msgs) > 0 {
 				fmt.Println("Got an error, expected none:", msgs[0].Error)
 				fmt.Println("Value was", value)
@@ -53,7 +70,7 @@ func TestRules(t *testing.T) {
 		// Then, ensure that it can fail
 		for _, value := range rule.Fails {
 			r.Form.Set("parameter", value)
-			msgs, _ := Check(r, Rule{"parameter", rule.Check})
+			msgs, _ := Check(r, Rule{"parameter", rule.Check, rule.Options})
 			if len(msgs) == 0 {
 				fmt.Println("Expected an error, didn't get one")
 				fmt.Println("Value was", value)

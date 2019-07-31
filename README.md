@@ -17,6 +17,7 @@ reinventing the wheel:
 nameIsAlpha := validate.Rule{
   Param: "name",
   Check: validate.Alpha,
+  nil,
 }
 ```
 
@@ -33,8 +34,27 @@ nameRequired := validate.Rule{
         }
 
         return nil
-    }
+    },
+    nil,
 }
+```
+
+Some validators utilise an `Options` map to provide dynamic checks:
+
+```go
+long := validate.Rule{
+  Param: "name",
+  Check: validate.MaxLength,
+  // Max length is 5 characters
+  Options: validate.Options{"length": 5},
+}
+```
+
+When using built-in validation rules, you can inline the struct
+to make it more readable at a glance:
+
+```go
+validate.Rule{"name", validate.MaxLength, validate.Options{"length": 5}}
 ```
 
 2. Call `validate.Check`. This accepts an `http.Request` and any
