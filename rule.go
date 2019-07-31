@@ -151,7 +151,7 @@ var (
 		}
 
 		if pass, _ := regexp.MatchString(pattern, value); pass {
-			return fmt.Errorf("%s did not match regex `%s`", param, pattern)
+			return fmt.Errorf("%s must not match regex `%s`", param, pattern)
 		}
 
 		return nil
