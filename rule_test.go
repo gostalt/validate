@@ -59,6 +59,12 @@ func TestRules(t *testing.T) {
 			[]string{"letters99", "__1", "66666__"},
 			Options{"pattern": `[0-9]+[a-zA-Z]+`},
 		},
+		{
+			NotRegex,
+			[]string{"letters99", "__1", "66666__"},
+			[]string{"55555aa", "514tomy", "1810Lucy"},
+			Options{"pattern": `[0-9]+[a-zA-Z]+`},
+		},
 	}
 
 	for _, rule := range rules {
