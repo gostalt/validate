@@ -31,6 +31,11 @@ func TestRules(t *testing.T) {
 			[]string{"true", "false", "1", "0"},
 			[]string{"2", "truthy", "falsy"},
 		},
+		{
+			Integer,
+			[]string{"123", "1", "0", "99"},
+			[]string{"abc", "1.5"},
+		},
 	}
 
 	for _, rule := range rules {

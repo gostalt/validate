@@ -50,6 +50,16 @@ var (
 		return nil
 	}
 
+	Integer CheckFunc = func(r *http.Request, param string) error {
+		fail, _ := regexp.MatchString(`[^0-9]+`, r.Form.Get(param))
+
+		if fail {
+			return fmt.Errorf("%s must be an integer", param)
+		}
+
+		return nil
+	}
+
 	Boolean CheckFunc = func(r *http.Request, param string) error {
 		value := r.Form.Get(param)
 
