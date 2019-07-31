@@ -17,7 +17,6 @@ reinventing the wheel:
 nameIsAlpha := validate.Rule{
   Param: "name",
   Check: validate.Alpha,
-  nil,
 }
 ```
 
@@ -35,7 +34,6 @@ nameRequired := validate.Rule{
 
         return nil
     },
-    nil,
 }
 ```
 
