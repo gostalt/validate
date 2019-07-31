@@ -122,4 +122,21 @@ var (
 
 		return nil
 	}
+
+	// Regex returns an error if the parameter does not satisfy
+	// the regular expression passed in the Options map.
+	Regex CheckFunc = func(r *http.Request, param string, o Options) error {
+		value := r.Form.Get(param)
+
+		pattern, ok := o["pattern"].(string)
+		if !ok {
+			return fmt.Errorf("unable to create regex to validate %s parameter", param)
+		}
+
+		if pass, _ := regexp.MatchString(pattern, value); !pass {
+			return fmt.Errorf("%s did not match regex `%s`", param, pattern)
+		}
+
+		return nil
+	}
 )

@@ -53,6 +53,12 @@ func TestRules(t *testing.T) {
 			[]string{"a", "1", "_", "-"},
 			Options{"length": 2},
 		},
+		{
+			Regex,
+			[]string{"55555aa", "514tomy", "1810Lucy"},
+			[]string{"letters99", "__1", "66666__"},
+			Options{"pattern": `[0-9]+[a-zA-Z]+`},
+		},
 	}
 
 	for _, rule := range rules {
