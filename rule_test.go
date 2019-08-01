@@ -71,6 +71,30 @@ func TestRules(t *testing.T) {
 			[]string{"me@something@tomm.us", "juststring", "me space@tomm.us"},
 			nil,
 		},
+		{
+			RFC3339,
+			[]string{"1993-10-18T10:10:10Z", "1992-06-22T10:10:10-05:00", "2006-01-02T15:04:05+01:00"},
+			[]string{"1993-10-18", "1992-06-22"},
+			nil,
+		},
+		{
+			DateFormat,
+			[]string{"2016/02/29", "2019/10/18", "1992/06/22"},
+			[]string{"2016-02-29", "2019-10-18", "1992-06-22"},
+			Options{"format": "2006/01/02"},
+		},
+		{
+			Date,
+			[]string{"1993-10-18T10:10:10-02:00", "22 Jun 92 15:04 UTC", "2019-08-01"},
+			[]string{"2016/02/29", "Monday 02 Jan 2006"},
+			Options{"formats": []string{"2006-01-02"}},
+		},
+		{
+			Date,
+			[]string{"1993-10-18T10:10:10-02:00", "22 Jun 92 15:04 UTC", "2019-08-01"},
+			[]string{"2016/02/29", "Monday 02 Jan 2006"},
+			Options{"formats": []string{"2006-01-02"}},
+		},
 	}
 
 	for _, rule := range rules {

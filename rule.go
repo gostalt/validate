@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Rule represents a check to run on a request.
@@ -178,5 +179,74 @@ var (
 		}
 
 		return fmt.Errorf("%s is not a valid email address", param)
+	}
+
+	// RFC3339 returns an error if the parameter does not satisfy
+	// the RFC3339 format.
+	RFC3339 CheckFunc = func(r *http.Request, param string, _ Options) error {
+		return DateFormat(r, param, Options{"format": time.RFC3339})
+	}
+
+	// DateFormat returns an error if the parameter does not
+	// satisfy the date format passed in the Options struct.
+	DateFormat CheckFunc = func(r *http.Request, param string, o Options) error {
+		value := r.Form.Get(param)
+
+		format, ok := o["format"].(string)
+		if !ok {
+			return fmt.Errorf("unable to create date format string")
+		}
+
+		if _, err := time.Parse(format, value); err != nil {
+			return fmt.Errorf("%s does not satisfy date format %s", param, format)
+		}
+
+		return nil
+	}
+
+	// Date is a comprehensive validator that returns an error if
+	// the parameter does not satisfy any of Go's built-in date
+	// formats.
+	//
+	// To validate against additional custom formats, you can pass
+	// a slice of strings to the Options struct using a `formats` key.
+	Date CheckFunc = func(r *http.Request, param string, o Options) error {
+		formats := []string{
+			time.ANSIC,
+			time.UnixDate,
+			time.RubyDate,
+			time.RFC822,
+			time.RFC822Z,
+			time.RFC850,
+			time.RFC1123,
+			time.RFC1123Z,
+			time.RFC3339,
+			time.RFC3339Nano,
+
+			// TODO: These are times... Maybe move them?
+			time.Kitchen,
+			time.Stamp,
+			time.StampMilli,
+			time.StampMicro,
+			time.StampNano,
+		}
+
+		customFormats, exists := o["formats"]
+		if exists {
+			customFormats, ok := customFormats.([]string)
+			if !ok {
+				return fmt.Errorf("unable to create date format string")
+			}
+
+			formats = append(formats, customFormats...)
+		}
+
+		for _, format := range formats {
+			if err := DateFormat(r, param, Options{"format": format}); err == nil {
+				return nil
+			}
+		}
+
+		return fmt.Errorf("%s does not satisfy and date format", param)
 	}
 )
