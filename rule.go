@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 // Rule represents a check to run on a request.
@@ -155,5 +156,27 @@ var (
 		}
 
 		return nil
+	}
+
+	// Email returns an error if the parameter value is not a valid
+	// email address.
+	Email CheckFunc = func(r *http.Request, param string, _ Options) error {
+		value := r.Form.Get(param)
+
+		atCount := strings.Count(value, "@")
+
+		// If there is not one @ sign in the string, it is not
+		// a valid email address.
+		if atCount != 1 {
+			return fmt.Errorf("%s is not a valid email address", param)
+		}
+
+		// TODO: This is a little basic, but will probably correctly
+		// verify a large number of emails. Maybe improve it.
+		if pass, _ := regexp.MatchString(`^[^@\s]+@[^@\s]+$`, value); pass {
+			return nil
+		}
+
+		return fmt.Errorf("%s is not a valid email address", param)
 	}
 )

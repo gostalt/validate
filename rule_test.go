@@ -65,6 +65,12 @@ func TestRules(t *testing.T) {
 			[]string{"55555aa", "514tomy", "1810Lucy"},
 			Options{"pattern": `[0-9]+[a-zA-Z]+`},
 		},
+		{
+			Email,
+			[]string{"me@tomm.us", "me+99__.asd@subdomain.tomm.us"},
+			[]string{"me@something@tomm.us", "juststring", "me space@tomm.us"},
+			nil,
+		},
 	}
 
 	for _, rule := range rules {
