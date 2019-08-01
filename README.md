@@ -88,3 +88,73 @@ the errors will be wrapped in an `error` object:
 Of course, you can manually interact with the `msgs` variable
 that is returned from the `Check` method if you need to carry
 out additional logic or handling of failed validation.
+
+## Available Validators
+
+Validate offers a number of built-in validators:
+
+### Alpha
+
+Fails if the parameter contains any characters that aren't in the
+alphabet.
+
+### Alphanumeric
+
+Fails if the parameter contains any characters that are not an
+alphabet letter or a number.
+
+### Boolean
+
+Fails if the parameter is not a boolean. Because request params
+do not have a type, this validator fails if the value of the
+param is not equal to `"true"`, `"false"`, `"1"` or `"0"`.
+
+### Date
+
+Fails if the parameter is not a date. This validator uses the
+built-in Go date formats to check if the passed value is a date.
+You can also pass a slice of strings as a `formats` key in the
+Options struct.
+
+### DateFormat
+
+Fails if the parameter does not matched the `format` key's value
+passed in the Options struct.
+
+### Email
+
+Fails if the parameter is not an email address.
+
+### Integer
+
+Fails if the parameter is not an integer. Uses the regex `^[0-9]+`
+to determine a pass.
+
+### MaxLength
+
+Fails if the length of the parameter (number of characters) is
+greater than the `length` value passed to the Options struct.
+
+### MinLength
+
+Fails if the length of the parameter (number of characters) is
+less than the `length` value passed to the Options struct.
+
+### NotRegex
+
+Fails if the parameter is satisfied by the regex `pattern` passed
+to the Options struct.
+
+### Regex
+
+Fails if the parameter does not satisfy the regex `pattern` passed
+to the Options struct.
+
+### Required
+
+Fails if the parameter does not exist in the request.
+
+### RFC3339
+
+Fails if the value passed does not match the date pattern defined
+by RFC3339.
