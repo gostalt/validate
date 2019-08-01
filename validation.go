@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -58,7 +59,7 @@ func (v *Validator) Run() ([]Message, error) {
 	vm := make([]Message, 0, len(v.Rules))
 
 	for _, rule := range v.Rules {
-		if err := rule.Check(v.request, rule.Param); err != nil {
+		if err := rule.Check(v.request, rule.Param, rule.Options); err != nil {
 			vm = append(vm, Message{
 				Error: err.Error(),
 				Param: rule.Param,
@@ -76,4 +77,12 @@ func (v *Validator) Run() ([]Message, error) {
 // Add adds an additional set of rules to the Validator.
 func (v *Validator) Add(rules ...Rule) {
 	v.Rules = append(v.Rules, rules...)
+}
+
+type Bag string
+
+const ErrorBag Bag = "errorbag"
+
+func ErrorContext(r *http.Request, msgs []Message) context.Context {
+	return context.WithValue(r.Context(), ErrorBag, msgs)
 }

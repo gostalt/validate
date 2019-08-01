@@ -7,19 +7,38 @@ import (
 	"testing"
 )
 
+func TestAddErrorsToContext(t *testing.T) {
+	r, _ := http.NewRequest("GET", "localhost", nil)
+
+	rule := Rule{
+		Param: "forename",
+		Check: func(r *http.Request, param string, _ Options) error {
+			return errors.New("fail")
+		},
+	}
+
+	msgs, _ := Check(r, rule)
+	r = r.WithContext(ErrorContext(r, msgs))
+
+	val := r.Context().Value(ErrorBag)
+	_ = val.([]Message)
+
+	// TODO: Test this
+}
+
 func TestCheckCreatesValidatorAndRunsIt(t *testing.T) {
 	r, _ := http.NewRequest("GET", "localhost", nil)
 
 	rule := Rule{
 		Param: "forename",
-		Check: func(r *http.Request, param string) error {
+		Check: func(r *http.Request, param string, _ Options) error {
 			return errors.New("fail")
 		},
 	}
 
 	rule2 := Rule{
 		Param: "forename",
-		Check: func(r *http.Request, param string) error {
+		Check: func(r *http.Request, param string, _ Options) error {
 			return errors.New("fail")
 		},
 	}
@@ -64,7 +83,7 @@ func TestFailureReturnsValidationMessage(t *testing.T) {
 
 	rule := Rule{
 		Param: "forename",
-		Check: func(r *http.Request, param string) error {
+		Check: func(r *http.Request, param string, _ Options) error {
 			return errors.New("fail")
 		},
 	}
@@ -86,7 +105,7 @@ func TestValidatorRunsRuleCheck(t *testing.T) {
 
 	rule := Rule{
 		Param: "forename",
-		Check: func(r *http.Request, param string) error {
+		Check: func(r *http.Request, param string, _ Options) error {
 			return errors.New("forced failure")
 		},
 	}
@@ -106,7 +125,7 @@ func TestValidatorReturnsRuleCheckErrorMessage(t *testing.T) {
 
 	rule := Rule{
 		Param: "forename",
-		Check: func(r *http.Request, param string) error {
+		Check: func(r *http.Request, param string, _ Options) error {
 			return errors.New("forced failure")
 		},
 	}
@@ -127,7 +146,7 @@ func TestValidatorReturnsParamInError(t *testing.T) {
 
 	rule := Rule{
 		Param: "forename",
-		Check: func(r *http.Request, param string) error {
+		Check: func(r *http.Request, param string, _ Options) error {
 			return errors.New("forced failure")
 		},
 	}
