@@ -27,226 +27,224 @@ type Options map[string]interface{}
 // any passed options to determine if a Rule is passed.
 type CheckFunc func(*http.Request, string, Options) error
 
-var (
-	// Required returns an error if the parameter is not in the request.
-	// Additional checks should be made to ensure it is not empty, etc.
-	Required CheckFunc = func(r *http.Request, param string, _ Options) error {
-		if _, exists := r.Form[param]; !exists {
-			return fmt.Errorf("%s is required", param)
-		}
+// Required returns an error if the parameter is not in the request.
+// Additional checks should be made to ensure it is not empty, etc.
+var Required CheckFunc = func(r *http.Request, param string, _ Options) error {
+	if _, exists := r.Form[param]; !exists {
+		return fmt.Errorf("%s is required", param)
+	}
 
+	return nil
+}
+
+// Alpha returns an error if the parameter contains any characters
+// that are not in the alphabet, represented by the regular
+// expression `[a-zA-Z]+`.
+var Alpha CheckFunc = func(r *http.Request, param string, _ Options) error {
+	fail, _ := regexp.MatchString(`[^a-zA-Z]+`, r.Form.Get(param))
+
+	if fail {
+		return fmt.Errorf("%s must only contain alphabetical characters", param)
+	}
+
+	return nil
+}
+
+// Alphanumeric returns an error if the parameter contains
+// any characters that are not letters or numbers.
+var Alphanumeric CheckFunc = func(r *http.Request, param string, _ Options) error {
+	fail, _ := regexp.MatchString(`[^a-zA-Z0-9]+`, r.Form.Get(param))
+
+	if fail {
+		return fmt.Errorf("%s must only contain alphanumeric characters", param)
+	}
+
+	return nil
+}
+
+// Integer returns an error if the parameter contains any
+// character that is not a digit.
+var Integer CheckFunc = func(r *http.Request, param string, _ Options) error {
+	fail, _ := regexp.MatchString(`[^0-9]+`, r.Form.Get(param))
+
+	if fail {
+		return fmt.Errorf("%s must be an integer", param)
+	}
+
+	return nil
+}
+
+// Boolean returns an error if the parameter contains a value
+// that is not boolean. Because these values are coming in
+// via a HTTP request (and are therefore strings), a boolean
+// value must be inferred.
+var Boolean CheckFunc = func(r *http.Request, param string, _ Options) error {
+	value := r.Form.Get(param)
+
+	if value == "true" || value == "false" || value == "1" || value == "0" {
 		return nil
 	}
 
-	// Alpha returns an error if the parameter contains any characters
-	// that are not in the alphabet, represented by the regular
-	// expression `[a-zA-Z]+`.
-	Alpha CheckFunc = func(r *http.Request, param string, _ Options) error {
-		fail, _ := regexp.MatchString(`[^a-zA-Z]+`, r.Form.Get(param))
+	return fmt.Errorf("%s must be a boolean value", param)
+}
 
-		if fail {
-			return fmt.Errorf("%s must only contain alphabetical characters", param)
-		}
+// MaxLength returns an error if the parameter length (number
+// of characters) exceeds the length set in the Options map
+// passed to the Rule.
+var MaxLength CheckFunc = func(r *http.Request, param string, o Options) error {
+	value := r.Form.Get(param)
 
-		return nil
+	max, ok := o["length"].(int)
+	if !ok {
+		max = 0
 	}
 
-	// Alphanumeric returns an error if the parameter contains
-	// any characters that are not letters or numbers.
-	Alphanumeric CheckFunc = func(r *http.Request, param string, _ Options) error {
-		fail, _ := regexp.MatchString(`[^a-zA-Z0-9]+`, r.Form.Get(param))
-
-		if fail {
-			return fmt.Errorf("%s must only contain alphanumeric characters", param)
-		}
-
-		return nil
+	if len(value) > max {
+		return fmt.Errorf("%s cannot be longer than %d characters", param, max)
 	}
 
-	// Integer returns an error if the parameter contains any
-	// character that is not a digit.
-	Integer CheckFunc = func(r *http.Request, param string, _ Options) error {
-		fail, _ := regexp.MatchString(`[^0-9]+`, r.Form.Get(param))
+	return nil
+}
 
-		if fail {
-			return fmt.Errorf("%s must be an integer", param)
-		}
+// MinLength returns an error if the parameter length (number
+// of characters) is shorter than the length set in the Options
+// map passed to the Rule.
+var MinLength CheckFunc = func(r *http.Request, param string, o Options) error {
+	value := r.Form.Get(param)
 
-		return nil
+	min, ok := o["length"].(int)
+	if !ok {
+		min = 0
 	}
 
-	// Boolean returns an error if the parameter contains a value
-	// that is not boolean. Because these values are coming in
-	// via a HTTP request (and are therefore strings), a boolean
-	// value must be inferred.
-	Boolean CheckFunc = func(r *http.Request, param string, _ Options) error {
-		value := r.Form.Get(param)
-
-		if value == "true" || value == "false" || value == "1" || value == "0" {
-			return nil
-		}
-
-		return fmt.Errorf("%s must be a boolean value", param)
+	if len(value) < min {
+		return fmt.Errorf("%s must be longer than %d characters", param, min)
 	}
 
-	// MaxLength returns an error if the parameter length (number
-	// of characters) exceeds the length set in the Options map
-	// passed to the Rule.
-	MaxLength CheckFunc = func(r *http.Request, param string, o Options) error {
-		value := r.Form.Get(param)
+	return nil
+}
 
-		max, ok := o["length"].(int)
-		if !ok {
-			max = 0
-		}
+// Regex returns an error if the parameter does not satisfy
+// the regular expression passed in the Options map.
+var Regex CheckFunc = func(r *http.Request, param string, o Options) error {
+	value := r.Form.Get(param)
 
-		if len(value) > max {
-			return fmt.Errorf("%s cannot be longer than %d characters", param, max)
-		}
-
-		return nil
+	pattern, ok := o["pattern"].(string)
+	if !ok {
+		return fmt.Errorf("unable to create regex to validate %s parameter", param)
 	}
 
-	// MinLength returns an error if the parameter length (number
-	// of characters) is shorter than the length set in the Options
-	// map passed to the Rule.
-	MinLength CheckFunc = func(r *http.Request, param string, o Options) error {
-		value := r.Form.Get(param)
-
-		min, ok := o["length"].(int)
-		if !ok {
-			min = 0
-		}
-
-		if len(value) < min {
-			return fmt.Errorf("%s must be longer than %d characters", param, min)
-		}
-
-		return nil
+	if pass, _ := regexp.MatchString(pattern, value); !pass {
+		return fmt.Errorf("%s did not match regex `%s`", param, pattern)
 	}
 
-	// Regex returns an error if the parameter does not satisfy
-	// the regular expression passed in the Options map.
-	Regex CheckFunc = func(r *http.Request, param string, o Options) error {
-		value := r.Form.Get(param)
+	return nil
+}
 
-		pattern, ok := o["pattern"].(string)
-		if !ok {
-			return fmt.Errorf("unable to create regex to validate %s parameter", param)
-		}
+// NotRegex returns an error if the parameter value is satisfied
+// by the regular expression passed in the Options map.
+var NotRegex CheckFunc = func(r *http.Request, param string, o Options) error {
+	value := r.Form.Get(param)
 
-		if pass, _ := regexp.MatchString(pattern, value); !pass {
-			return fmt.Errorf("%s did not match regex `%s`", param, pattern)
-		}
-
-		return nil
+	pattern, ok := o["pattern"].(string)
+	if !ok {
+		return fmt.Errorf("unable to create regex to validate %s parameter", param)
 	}
 
-	// NotRegex returns an error if the parameter value is satisfied
-	// by the regular expression passed in the Options map.
-	NotRegex CheckFunc = func(r *http.Request, param string, o Options) error {
-		value := r.Form.Get(param)
-
-		pattern, ok := o["pattern"].(string)
-		if !ok {
-			return fmt.Errorf("unable to create regex to validate %s parameter", param)
-		}
-
-		if pass, _ := regexp.MatchString(pattern, value); pass {
-			return fmt.Errorf("%s must not match regex `%s`", param, pattern)
-		}
-
-		return nil
+	if pass, _ := regexp.MatchString(pattern, value); pass {
+		return fmt.Errorf("%s must not match regex `%s`", param, pattern)
 	}
 
-	// Email returns an error if the parameter value is not a valid
-	// email address.
-	Email CheckFunc = func(r *http.Request, param string, _ Options) error {
-		value := r.Form.Get(param)
+	return nil
+}
 
-		atCount := strings.Count(value, "@")
+// Email returns an error if the parameter value is not a valid
+// email address.
+var Email CheckFunc = func(r *http.Request, param string, _ Options) error {
+	value := r.Form.Get(param)
 
-		// If there is not one @ sign in the string, it is not
-		// a valid email address.
-		if atCount != 1 {
-			return fmt.Errorf("%s is not a valid email address", param)
-		}
+	atCount := strings.Count(value, "@")
 
-		// TODO: This is a little basic, but will probably correctly
-		// verify a large number of emails. Maybe improve it.
-		if pass, _ := regexp.MatchString(`^[^@\s]+@[^@\s]+$`, value); pass {
-			return nil
-		}
-
+	// If there is not one @ sign in the string, it is not
+	// a valid email address.
+	if atCount != 1 {
 		return fmt.Errorf("%s is not a valid email address", param)
 	}
 
-	// RFC3339 returns an error if the parameter does not satisfy
-	// the RFC3339 format.
-	RFC3339 CheckFunc = func(r *http.Request, param string, _ Options) error {
-		return DateFormat(r, param, Options{"format": time.RFC3339})
+	// TODO: This is a little basic, but will probably correctly
+	// verify a large number of emails. Maybe improve it.
+	if pass, _ := regexp.MatchString(`^[^@\s]+@[^@\s]+$`, value); pass {
+		return nil
 	}
 
-	// DateFormat returns an error if the parameter does not
-	// satisfy the date format passed in the Options struct.
-	DateFormat CheckFunc = func(r *http.Request, param string, o Options) error {
-		value := r.Form.Get(param)
+	return fmt.Errorf("%s is not a valid email address", param)
+}
 
-		format, ok := o["format"].(string)
+// RFC3339 returns an error if the parameter does not satisfy
+// the RFC3339 format.
+var RFC3339 CheckFunc = func(r *http.Request, param string, _ Options) error {
+	return DateFormat(r, param, Options{"format": time.RFC3339})
+}
+
+// DateFormat returns an error if the parameter does not
+// satisfy the date format passed in the Options struct.
+var DateFormat CheckFunc = func(r *http.Request, param string, o Options) error {
+	value := r.Form.Get(param)
+
+	format, ok := o["format"].(string)
+	if !ok {
+		return fmt.Errorf("unable to create date format string")
+	}
+
+	if _, err := time.Parse(format, value); err != nil {
+		return fmt.Errorf("%s does not satisfy date format %s", param, format)
+	}
+
+	return nil
+}
+
+// Date is a comprehensive validator that returns an error if
+// the parameter does not satisfy any of Go's built-in date
+// formats.
+//
+// To validate against additional custom formats, you can pass
+// a slice of strings to the Options struct using a `formats` key.
+var Date CheckFunc = func(r *http.Request, param string, o Options) error {
+	formats := []string{
+		time.ANSIC,
+		time.UnixDate,
+		time.RubyDate,
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC850,
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC3339,
+		time.RFC3339Nano,
+
+		// TODO: These are times... Maybe move them?
+		time.Kitchen,
+		time.Stamp,
+		time.StampMilli,
+		time.StampMicro,
+		time.StampNano,
+	}
+
+	customFormats, exists := o["formats"]
+	if exists {
+		customFormats, ok := customFormats.([]string)
 		if !ok {
 			return fmt.Errorf("unable to create date format string")
 		}
 
-		if _, err := time.Parse(format, value); err != nil {
-			return fmt.Errorf("%s does not satisfy date format %s", param, format)
-		}
-
-		return nil
+		formats = append(formats, customFormats...)
 	}
 
-	// Date is a comprehensive validator that returns an error if
-	// the parameter does not satisfy any of Go's built-in date
-	// formats.
-	//
-	// To validate against additional custom formats, you can pass
-	// a slice of strings to the Options struct using a `formats` key.
-	Date CheckFunc = func(r *http.Request, param string, o Options) error {
-		formats := []string{
-			time.ANSIC,
-			time.UnixDate,
-			time.RubyDate,
-			time.RFC822,
-			time.RFC822Z,
-			time.RFC850,
-			time.RFC1123,
-			time.RFC1123Z,
-			time.RFC3339,
-			time.RFC3339Nano,
-
-			// TODO: These are times... Maybe move them?
-			time.Kitchen,
-			time.Stamp,
-			time.StampMilli,
-			time.StampMicro,
-			time.StampNano,
+	for _, format := range formats {
+		if err := DateFormat(r, param, Options{"format": format}); err == nil {
+			return nil
 		}
-
-		customFormats, exists := o["formats"]
-		if exists {
-			customFormats, ok := customFormats.([]string)
-			if !ok {
-				return fmt.Errorf("unable to create date format string")
-			}
-
-			formats = append(formats, customFormats...)
-		}
-
-		for _, format := range formats {
-			if err := DateFormat(r, param, Options{"format": format}); err == nil {
-				return nil
-			}
-		}
-
-		return fmt.Errorf("%s does not satisfy and date format", param)
 	}
-)
+
+	return fmt.Errorf("%s does not satisfy and date format", param)
+}
