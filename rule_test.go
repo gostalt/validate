@@ -103,7 +103,7 @@ func TestRules(t *testing.T) {
 			r.Form.Set("parameter", value)
 			msgs, _ := Check(r, Rule{"parameter", rule.Check, rule.Options})
 			if len(msgs) > 0 {
-				fmt.Println("Got an error, expected none:", msgs[0].Error)
+				fmt.Println("Got an error, expected none:", msgs["parameter"])
 				fmt.Println("Value was", value)
 				t.FailNow()
 			}

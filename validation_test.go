@@ -7,25 +7,6 @@ import (
 	"testing"
 )
 
-func TestAddErrorsToContext(t *testing.T) {
-	r, _ := http.NewRequest("GET", "localhost", nil)
-
-	rule := Rule{
-		Param: "forename",
-		Check: func(r *http.Request, param string, _ Options) error {
-			return errors.New("fail")
-		},
-	}
-
-	msgs, _ := Check(r, rule)
-	r = r.WithContext(ErrorContext(r, msgs))
-
-	val := r.Context().Value(ErrorBag)
-	_ = val.([]Message)
-
-	// TODO: Test this
-}
-
 func TestCheckCreatesValidatorAndRunsIt(t *testing.T) {
 	r, _ := http.NewRequest("GET", "localhost", nil)
 
@@ -133,7 +114,8 @@ func TestValidatorReturnsRuleCheckErrorMessage(t *testing.T) {
 	validator.Add(rule)
 
 	messages, _ := validator.Run()
-	if messages[0].Error != "forced failure" {
+
+	if messages["forename"][0] != "forced failure" {
 		fmt.Println("expected the message to contain the rule error. It didn't.")
 		t.FailNow()
 	}
@@ -154,8 +136,42 @@ func TestValidatorReturnsParamInError(t *testing.T) {
 	validator.Add(rule)
 
 	messages, _ := validator.Run()
-	if messages[0].Param != "forename" {
-		fmt.Println("expected the message to contain the param. It didn't.")
-		t.FailNow()
+
+	for param := range messages {
+		if param != "forename" {
+			fmt.Println("expected the message to contain the param. It didn't.")
+			t.FailNow()
+		}
+	}
+}
+
+func TestParamHasNestedErrors(t *testing.T) {
+	r, _ := http.NewRequest("GET", "localhost", nil)
+
+	validator := Make(r)
+
+	rule := Rule{
+		Param: "forename",
+		Check: func(r *http.Request, param string, _ Options) error {
+			return errors.New("forced failure")
+		},
+	}
+
+	rule2 := Rule{
+		Param: "forename",
+		Check: func(r *http.Request, param string, _ Options) error {
+			return errors.New("forced failure")
+		},
+	}
+
+	validator.Add(rule, rule2)
+
+	messages, _ := validator.Run()
+
+	for _, msgs := range messages {
+		if len(msgs) != 2 {
+			fmt.Println("expected the param to contain two errors. It didn't")
+			t.FailNow()
+		}
 	}
 }
