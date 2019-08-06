@@ -1,39 +1,56 @@
 # Validate
 
-A validator for `http.Request`.
+A validator for the Go `http.Request`.
 
-> Very rough, don't use in production, etc, etc.
+Gostalt Validate provides an easy-to-use package for validating
+form values in Go. With it, you construct a ruleset, and use it
+to ensure that an incoming request is satisfied.
 
-## Use
+## Usage
 
-1. Create a number of `Rule` items to check against. Each rule
-has a parameter and a callback that determines if a Rule passes
-or not.
+Firstly, create a number of `Rule` items to check against. Each
+rule has a parameter and a callback that is ran to determine if
+the Rule passes or not.
 
-There are a number of built-in checks that you can use, rather than
-reinventing the wheel:
+Validate ships with a number of [built-in checks] that you can
+use:
+
+[built-in checks]: #Validators
 
 ```go
-nameIsAlpha := validate.Rule{
-  Param: "name",
-  Check: validate.Alpha,
+alphaForename := validate.Rule{
+  Param: "forename",
+  Check: validation.Alpha,
+}
+
+alphaSurname := validate.Rule{
+  Param: "surname",
+  Check: validation.Alpha,
 }
 ```
 
-However, you are free to create your own rules by passing a function
-to the Check field. This function must take an http.Request and a string
-and return an error:
+However, you are free to create your own rules by passing a func
+to the Check field. The func must be compatible with `CheckFunc`:
 
 ```go
-nameRequired := validate.Rule{
-    Param: "name",
-    Check: func(r *http.Request, param string) error {
-        if _, exists := r.Form[param]; !exists {
-            return fmt.Error("%s is required", param)
-        }
+type CheckFunc func(*http.Request, string, Options) error
+```
 
-        return nil
-    },
+Inside the function, you can use the http.Request to extract any
+parameters you wish to check—the second argument to the function
+is the parameter, so you can retrieve it dynamically from the
+request:
+
+```go
+// Below is the built-in Integer validator.
+var Integer CheckFunc = func(r *http.Request, param string, _ Options) error {
+	fail, _ := regexp.MatchString(`[^0-9]+`, r.Form.Get(param))
+
+	if fail {
+		return fmt.Errorf("%s must be an integer", param)
+	}
+
+	return nil
 }
 ```
 
@@ -48,38 +65,69 @@ long := validate.Rule{
 }
 ```
 
-When using built-in validation rules, you can inline the struct
-to make it more readable at a glance:
+You can use the Options map in your own custom validators using
+the third argument to the CheckFunc:
 
 ```go
-validate.Rule{"name", validate.MaxLength, validate.Options{"length": 5}}
+// Below is the built-in MaxLength validator.
+var MaxLength CheckFunc = func(r *http.Request, param string, o Options) error {
+	value := r.Form.Get(param)
+
+	max, ok := o["length"].(int)
+	if !ok {
+		max = 0
+	}
+
+	if len(value) > max {
+		return fmt.Errorf("%s cannot be longer than %d characters", param, max)
+	}
+
+	return nil
+}
 ```
 
-2. Call `validate.Check`. This accepts an `http.Request` and any
-number of Rules, and returns a slice of `Message`s and an error:
+When you have created all the validators you wish to use against
+a request, call `validate.Check`. This accepts an http.Request
+and any number of rules, and returns a `Message` and an error:
 
 ```go
-msgs, err := validate.Check(r, nameRequired)
+msgs, err := validate.Check(r, alphaForename, alphaSurname)
 ```
 
-3. To automatically handle writing a response, you can call the
-`validate.Response` method, and pass it an `http.ResponseWriter`
-and the slice of `Message`s:
+It may be more succinct to create a variable or function that
+contains the rules, and use the spread operator:
+
+```go
+msgs, err := validate.Check(r, rules()...)
+```
+
+When creating validation as part of a JSON API, you can easily
+create a response using `validate.Response` (after checking
+whether the validation as failed or not!). All you need to do
+is pass in a ResponseWriter and the failed validation messages:
 
 ```go
 validate.Response(w, msgs)
 ```
 
-This will automatically write a `422` header and a
-`Content-Type: application/json` header to the response, then,
-the errors will be wrapped in an `error` object:
+This will automatically write a `422 Unprocessable Entity` header
+and a `Content-Type: application/json` header to the response,
+then, the errors will be wrapped in an `error` object:
 
 ```json
 {
   "errors": [
     {
-      "error": "name is required",
-      "param": "name"
+      "forename": [
+        "forename is required",
+        "forename must be longer than 5 characters"
+      ],
+      "surname": [
+        "surname must be longer than 5 characters"
+      ],
+      "dob": [
+        "dob does not satisfy date format 2006-01-02"
+      ]
     }
   ]
 }
@@ -89,7 +137,7 @@ Of course, you can manually interact with the `msgs` variable
 that is returned from the `Check` method if you need to carry
 out additional logic or handling of failed validation.
 
-## Available Validators
+## Validators
 
 Validate offers a number of built-in validators:
 
