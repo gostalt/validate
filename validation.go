@@ -3,8 +3,6 @@ package validate
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 )
 
@@ -48,10 +46,9 @@ func Make(r *http.Request, rule ...Rule) *Validator {
 }
 
 // Run determines if the given rules are satisfied by the request.
-// A "perfect" outcome is `nil, nil`.
 func (v *Validator) Run() (Message, error) {
 	if len(v.Rules) == 0 {
-		return nil, fmt.Errorf("no rules defined on validator")
+		return nil, EmptyRuleset
 	}
 
 	vm := make(Message)
@@ -63,7 +60,7 @@ func (v *Validator) Run() (Message, error) {
 	}
 
 	if len(vm) > 0 {
-		return vm, errors.New("validation failed")
+		return vm, ValidationFailed
 	}
 
 	return nil, nil

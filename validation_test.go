@@ -31,13 +31,14 @@ func TestCheckCreatesValidatorAndRunsIt(t *testing.T) {
 	}
 }
 
-func TestMakeReturnsErrorWithNoRules(t *testing.T) {
+func TestRunReturnsErrorIfNoRulesExist(t *testing.T) {
 	r, _ := http.NewRequest("GET", "localhost", nil)
 
 	validator := Make(r)
 
-	if _, err := validator.Run(); err == nil {
-		fmt.Println("no error returned from empty validator")
+	_, err := validator.Run()
+	if err != EmptyRuleset {
+		fmt.Println("expected `EmptyRuleset` error.")
 		t.FailNow()
 	}
 }
