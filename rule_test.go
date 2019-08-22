@@ -38,7 +38,7 @@ func TestRules(t *testing.T) {
 		{
 			Integer,
 			[]string{"123", "1", "0", "99"},
-			[]string{"abc", "1.5"},
+			[]string{"abc", "1.5", ""},
 			nil,
 		},
 		{
@@ -134,5 +134,33 @@ func TestRequiredRule(t *testing.T) {
 	if len(msgs) == 0 {
 		fmt.Println("expected an error, didn't get one")
 		t.FailNow()
+	}
+}
+
+func BenchmarkInteger(b *testing.B) {
+	r, _ := http.NewRequest("GET", "localhost", nil)
+	for n := 0; n < b.N; n++ {
+		Integer(r, "example", nil)
+	}
+}
+
+func BenchmarkDate(b *testing.B) {
+	r, _ := http.NewRequest("GET", "localhost", nil)
+	for n := 0; n < b.N; n++ {
+		Date(r, "example", nil)
+	}
+}
+
+func BenchmarkRFC3339(b *testing.B) {
+	r, _ := http.NewRequest("GET", "localhost", nil)
+	for n := 0; n < b.N; n++ {
+		RFC3339(r, "example", nil)
+	}
+}
+
+func BenchmarkEmail(b *testing.B) {
+	r, _ := http.NewRequest("GET", "localhost", nil)
+	for n := 0; n < b.N; n++ {
+		Email(r, "example", nil)
 	}
 }
