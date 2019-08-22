@@ -164,6 +164,11 @@ built-in Go date formats to check if the passed value is a date.
 You can also pass a slice of strings as a `formats` key in the
 Options struct.
 
+Because this CheckFunc compares the given value against each of
+Go's built-in date formats, it can be computationally expensive.
+If you **know** the format that the date will be in, you should
+use the `DateFormat` CheckFunc.
+
 ### DateFormat
 
 Fails if the parameter does not matched the `format` key's value
