@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -62,12 +63,11 @@ var Alphanumeric CheckFunc = func(r *http.Request, param string, _ Options) erro
 	return nil
 }
 
-// Integer returns an error if the parameter contains any
-// character that is not a digit.
+// Integer returns an error if the parameter cannot be converted
+// to an integer.
 var Integer CheckFunc = func(r *http.Request, param string, _ Options) error {
-	fail, _ := regexp.MatchString(`[^0-9]+`, r.Form.Get(param))
-
-	if fail {
+	_, err := strconv.Atoi(r.Form.Get(param))
+	if err != nil {
 		return fmt.Errorf("%s must be an integer", param)
 	}
 
