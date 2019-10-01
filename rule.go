@@ -186,6 +186,24 @@ var RFC3339 CheckFunc = func(r *http.Request, param string, _ Options) error {
 	return DateFormat(r, param, Options{"format": time.RFC3339})
 }
 
+// RFC1123 returns an error if the parameter does not satisfy
+// the RFC1123 format.
+var RFC1123 CheckFunc = func(r *http.Request, param string, _ Options) error {
+	return DateFormat(r, param, Options{"format": time.RFC1123})
+}
+
+// RFC822 returns an error if the parameter does not satisfy the
+// RFC822 format.
+var RFC822 CheckFunc = func(r *http.Request, param string, _ Options) error {
+	return DateFormat(r, param, Options{"format": time.RFC822})
+}
+
+// UnixDate returns an error if the parameter does not satisfy
+// the format defined in Go's UnixDate const.
+var UnixDate CheckFunc = func(r *http.Request, param string, _ Options) error {
+	return DateFormat(r, param, Options{"format": time.UnixDate})
+}
+
 // DateFormat returns an error if the parameter does not
 // satisfy the date format passed in the Options struct.
 var DateFormat CheckFunc = func(r *http.Request, param string, o Options) error {
