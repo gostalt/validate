@@ -78,6 +78,24 @@ func TestRules(t *testing.T) {
 			nil,
 		},
 		{
+			RFC1123,
+			[]string{"Tue, 22 Jun 1992 10:00:00 GMT", "Tue, 18 Oct 1993 10:00:00 GMT"},
+			[]string{"1993-10-18", "1992-06-22"},
+			nil,
+		},
+		{
+			RFC822,
+			[]string{"22 Jun 92 10:00 GMT", "18 Oct 93 13:00 GMT"},
+			[]string{"1992-06-22"},
+			nil,
+		},
+		{
+			UnixDate,
+			[]string{"Mon Jan 16 15:04:05 MST 2006", "Tue Jun 22 10:00:00 GMT 1992"},
+			[]string{"1993-10-18", "1990-11-11"},
+			nil,
+		},
+		{
 			DateFormat,
 			[]string{"2016/02/29", "2019/10/18", "1992/06/22"},
 			[]string{"2016-02-29", "2019-10-18", "1992-06-22"},
