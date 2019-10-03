@@ -184,6 +184,17 @@ func BenchmarkRFC3339(b *testing.B) {
 
 func BenchmarkEmail(b *testing.B) {
 	r, _ := http.NewRequest("GET", "localhost", nil)
+	r.ParseForm()
+	r.Form.Add("example", "me@tomm.us")
+	for n := 0; n < b.N; n++ {
+		Email(r, "example", nil)
+	}
+}
+
+func BenchmarkMXEmail(b *testing.B) {
+	r, _ := http.NewRequest("GET", "localhost", nil)
+	r.ParseForm()
+	r.Form.Add("example", "me@tomm.us")
 	for n := 0; n < b.N; n++ {
 		Email(r, "example", nil)
 	}
