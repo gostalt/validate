@@ -72,6 +72,12 @@ func TestRules(t *testing.T) {
 			nil,
 		},
 		{
+			MXEmail,
+			[]string{"me@tomm.us", "lucyduggleby@hotmail.co.uk"},
+			[]string{"me@something@addasadsdn2343567hgbf.com", "juststring", "me@space@tomm.us"},
+			nil,
+		},
+		{
 			RFC3339,
 			[]string{"1993-10-18T10:10:10Z", "1992-06-22T10:10:10-05:00", "2006-01-02T15:04:05+01:00"},
 			[]string{"1993-10-18", "1992-06-22"},
