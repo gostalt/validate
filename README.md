@@ -178,6 +178,14 @@ passed in the Options struct.
 
 Fails if the parameter is not an email address.
 
+### MXEmail
+
+Fails if the parameter is not an email address. This validator
+firstly uses the `Email` validator to determine if the email
+address matches a pattern, but then also looks up the MX records
+of the email domain to more accurately determine if an email
+address exists.
+
 ### Integer
 
 Fails if the parameter is not an integer. Uses the regex `^[0-9]+`
