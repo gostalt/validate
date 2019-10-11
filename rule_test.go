@@ -75,7 +75,14 @@ func TestRules(t *testing.T) {
 			MXEmail,
 			[]string{"me@tomm.us", "lucyduggleby@hotmail.co.uk"},
 			[]string{"me@something@addasadsdn2343567hgbf.com", "juststring", "me@space@tomm.us"},
-			nil,
+			Options{"timeout": 10},
+		},
+		{
+			// MXEmail, but with a short timeout.
+			MXEmail,
+			[]string{}, // No `passable` values, as these should all time out.
+			[]string{"me@something@addasadsdn2343567hgbf.com", "juststring", "me@space@tomm.us"},
+			Options{"timeout": 1},
 		},
 		{
 			RFC3339,
