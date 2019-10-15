@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -162,15 +163,23 @@ var NotRegex CheckFunc = func(r *http.Request, param string, o Options) error {
 // MXEmail looks up the MX Records on a domain to check if a record exists. If
 // an MX record exists, it is likely that the email address is real. This is
 // smarter than just checking if an email address fits a certain format.
-var MXEmail CheckFunc = func(r *http.Request, param string, _ Options) error {
+var MXEmail CheckFunc = func(r *http.Request, param string, o Options) error {
 	if err := Email(r, param, nil); err != nil {
 		return err
+	}
+
+	timeout, ok := o["timeout"].(int)
+	if !ok {
+		timeout = 5
 	}
 
 	parts := strings.Split(r.Form.Get(param), "@")
 	domain := parts[len(parts)-1]
 
-	records, err := net.LookupMX(domain)
+	rsv := net.Resolver{}
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeout)*time.Second)
+	defer cancel()
+	records, err := rsv.LookupMX(ctx, domain)
 	if err != nil {
 		return fmt.Errorf("failed to look up MX records for %s", param)
 	}
