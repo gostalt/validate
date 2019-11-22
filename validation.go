@@ -39,6 +39,10 @@ func Check(r *http.Request, rule ...Rule) (Message, error) {
 // passed into it. The rules argument is optional. Rules can
 // be added by calling `Add` on the returned Validator.
 func Make(r *http.Request, rule ...Rule) *Validator {
+	if r.Form == nil {
+		r.ParseForm()
+	}
+
 	return &Validator{
 		request: r,
 		Rules:   rule,
