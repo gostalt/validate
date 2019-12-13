@@ -204,8 +204,6 @@ var Email CheckFunc = func(r *http.Request, param string, _ Options) error {
 		return fmt.Errorf("%s is not a valid email address", param)
 	}
 
-	// TODO: This is a little basic, but will probably correctly
-	// verify a large number of emails. Maybe improve it.
 	if pass, _ := regexp.MatchString(`^[^@\s]+@[^@\s]+$`, value); pass {
 		return nil
 	}
