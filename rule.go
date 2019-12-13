@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net"
@@ -173,19 +174,62 @@ var MXEmail CheckFunc = func(r *http.Request, param string, o Options) error {
 		timeout = 5
 	}
 
-	parts := strings.Split(r.Form.Get(param), "@")
-	domain := parts[len(parts)-1]
-
-	rsv := net.Resolver{}
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeout)*time.Second)
-	defer cancel()
-	records, err := rsv.LookupMX(ctx, domain)
+	domain := getDomain(r.Form.Get(param))
+	records, err := getMXRecords(r.Context(), domain, timeout)
 	if err != nil {
-		return fmt.Errorf("failed to look up MX records for %s", param)
+		return fmt.Errorf("the host %s is not a valid email provider", domain)
 	}
 
 	if len(records) == 0 {
 		return fmt.Errorf("no MX records exist for %s", param)
+	}
+
+	return nil
+}
+
+// TelnetEmail uses a telnet connection to dial into the mail provider
+// for the given email address and uses this connection to verify if
+// an email address is valid.
+//
+// TODO: Mixed results on Outlook/Hotmail.
+var TelnetEmail CheckFunc = func(r *http.Request, param string, _ Options) error {
+	if err := Email(r, param, nil); err != nil {
+		return err
+	}
+
+	address := r.Form.Get(param)
+
+	domain := getDomain(address)
+	records, err := getMXRecords(r.Context(), domain, 5)
+	if err != nil || len(records) == 0 {
+		return fmt.Errorf("no MX records exist for %s", param)
+	}
+
+	conn, err := net.Dial("tcp", records[0].Host+":25")
+	if err != nil {
+		return fmt.Errorf("unable to connect to %s to validate email", domain)
+	}
+	defer conn.Close()
+
+	responder := bufio.NewReader(conn)
+	// Discards the first line of the telnet connection
+	// so we are ready to send some commands to it.
+	responder.ReadString('\n')
+
+	commands := []string{
+		"helo hi",
+		"mail from: <validate@gostalt.com>",
+		fmt.Sprintf("rcpt to: <%s>", address),
+	}
+
+	var msg string
+	for _, cmd := range commands {
+		fmt.Fprintf(conn, cmd+"\n")
+		msg, _ = responder.ReadString('\n')
+	}
+
+	if msg[0:3] != "250" {
+		return fmt.Errorf("%s is not a valid email address", address)
 	}
 
 	return nil
@@ -204,8 +248,6 @@ var Email CheckFunc = func(r *http.Request, param string, _ Options) error {
 		return fmt.Errorf("%s is not a valid email address", param)
 	}
 
-	// TODO: This is a little basic, but will probably correctly
-	// verify a large number of emails. Maybe improve it.
 	if pass, _ := regexp.MatchString(`^[^@\s]+@[^@\s]+$`, value); pass {
 		return nil
 	}
@@ -298,4 +340,16 @@ var Date CheckFunc = func(r *http.Request, param string, o Options) error {
 	}
 
 	return fmt.Errorf("%s does not satisfy and date format", param)
+}
+
+func getMXRecords(ctx context.Context, domain string, timeout int) ([]*net.MX, error) {
+	rsv := net.Resolver{}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	defer cancel()
+	return rsv.LookupMX(ctx, domain)
+}
+
+func getDomain(email string) string {
+	parts := strings.Split(email, "@")
+	return parts[len(parts)-1]
 }
