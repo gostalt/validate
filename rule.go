@@ -173,15 +173,10 @@ var MXEmail CheckFunc = func(r *http.Request, param string, o Options) error {
 		timeout = 5
 	}
 
-	parts := strings.Split(r.Form.Get(param), "@")
-	domain := parts[len(parts)-1]
-
-	rsv := net.Resolver{}
-	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(timeout)*time.Second)
-	defer cancel()
-	records, err := rsv.LookupMX(ctx, domain)
+	domain := getDomain(r.Form.Get(param))
+	records, err := getMXRecords(r.Context(), domain, timeout)
 	if err != nil {
-		return fmt.Errorf("failed to look up MX records for %s", param)
+		return fmt.Errorf("the host %s is not a valid email provider", domain)
 	}
 
 	if len(records) == 0 {
