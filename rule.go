@@ -297,3 +297,15 @@ var Date CheckFunc = func(r *http.Request, param string, o Options) error {
 
 	return fmt.Errorf("%s does not satisfy and date format", param)
 }
+
+func getMXRecords(ctx context.Context, domain string, timeout int) ([]*net.MX, error) {
+	rsv := net.Resolver{}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(timeout)*time.Second)
+	defer cancel()
+	return rsv.LookupMX(ctx, domain)
+}
+
+func getDomain(email string) string {
+	parts := strings.Split(email, "@")
+	return parts[len(parts)-1]
+}
