@@ -72,9 +72,17 @@ func TestRules(t *testing.T) {
 			nil,
 		},
 		{
+			// TODO: Test is a little flaky.
+			TelnetEmail,
+			[]string{"me@tomm.us", "oliver@leaversmith.com"},
+			[]string{"m123123e@invalid.domain", "notanemail@tomm.us"},
+			nil,
+		},
+		{
+			// TODO: Test is a little flaky.
 			MXEmail,
 			[]string{"me@tomm.us", "lucyduggleby@hotmail.co.uk"},
-			[]string{"me@something@addasadsdn2343567hgbf.com", "juststring", "me@space@tomm.us"},
+			[]string{"me@invalid.domain", "juststring", "me@space@tomm.us"},
 			Options{"timeout": 10},
 		},
 		{

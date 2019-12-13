@@ -1,6 +1,7 @@
 package validate
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net"
@@ -181,6 +182,54 @@ var MXEmail CheckFunc = func(r *http.Request, param string, o Options) error {
 
 	if len(records) == 0 {
 		return fmt.Errorf("no MX records exist for %s", param)
+	}
+
+	return nil
+}
+
+// TelnetEmail uses a telnet connection to dial into the mail provider
+// for the given email address and uses this connection to verify if
+// an email address is valid.
+//
+// TODO: Mixed results on Outlook/Hotmail.
+var TelnetEmail CheckFunc = func(r *http.Request, param string, _ Options) error {
+	if err := Email(r, param, nil); err != nil {
+		return err
+	}
+
+	address := r.Form.Get(param)
+
+	domain := getDomain(address)
+	records, err := getMXRecords(r.Context(), domain, 5)
+	if err != nil || len(records) == 0 {
+		return fmt.Errorf("no MX records exist for %s", param)
+	}
+
+	conn, err := net.Dial("tcp", records[0].Host+":25")
+	if err != nil {
+		return fmt.Errorf("unable to connect to %s to validate email", domain)
+	}
+	defer conn.Close()
+
+	responder := bufio.NewReader(conn)
+	// Discards the first line of the telnet connection
+	// so we are ready to send some commands to it.
+	responder.ReadString('\n')
+
+	commands := []string{
+		"helo hi",
+		"mail from: <validate@gostalt.com>",
+		fmt.Sprintf("rcpt to: <%s>", address),
+	}
+
+	var msg string
+	for _, cmd := range commands {
+		fmt.Fprintf(conn, cmd+"\n")
+		msg, _ = responder.ReadString('\n')
+	}
+
+	if msg[0:3] != "250" {
+		return fmt.Errorf("%s is not a valid email address", address)
 	}
 
 	return nil
