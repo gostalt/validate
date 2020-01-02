@@ -36,6 +36,12 @@ func TestRules(t *testing.T) {
 			nil,
 		},
 		{
+			Empty,
+			[]string{"content", "1", "true"},
+			[]string{""},
+			nil,
+		},
+		{
 			Integer,
 			[]string{"123", "1", "0", "99"},
 			[]string{"abc", "1.5", ""},

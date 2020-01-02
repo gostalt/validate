@@ -41,6 +41,18 @@ var Required CheckFunc = func(r *http.Request, param string, _ Options) error {
 	return nil
 }
 
+// Empty returns an error if the parameter is empty. That is, it
+// exists in the request, but is an empty string.
+var Empty CheckFunc = func(r *http.Request, param string, _ Options) error {
+	value := r.Form.Get(param)
+
+	if value == "" {
+		return fmt.Errorf("%s cannot be empty", param)
+	}
+
+	return nil
+}
+
 // Alpha returns an error if the parameter contains any characters
 // that are not in the alphabet, represented by the regular
 // expression `[a-zA-Z]+`.
